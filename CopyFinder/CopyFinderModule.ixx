@@ -2,7 +2,7 @@ module;
 
 export module CopyFinderModule;
 
-import <iostream>;
+export import <iostream>;
 export import <filesystem>;
 import <vector>;
 import <concepts>;
@@ -219,6 +219,24 @@ export
 				deleted++;
 
 		std::cout << "Number of files deleted: " << deleted << std::endl;
+	}
+
+	void RenameFiles(const std::string& path, const std::string& prefix, const std::string& extension = "")
+	{
+		unsigned long fileNumber = 1;
+		for (const auto& pathIt : directory_iterator(path))
+		{
+			if (!std::filesystem::is_directory(pathIt))
+			{
+				auto extensionInner = GetFileExtension(pathIt.path().string());
+				auto newName = path;
+				newName.append("\\");
+				newName.append(prefix);
+				newName.append(std::to_string(fileNumber++));
+				newName.append(extensionInner);
+				rename(pathIt.path().c_str(), newName.c_str());
+			}
+		}
 	}
 
 }

@@ -12,7 +12,7 @@ import <algorithm>;
 import <numeric>;
 import <fstream>;
 import <list>;
-
+import <thread>;
 
 
 struct FileInfo
@@ -39,6 +39,8 @@ struct FileInfo
 // extension key - FileInfo data
 std::unordered_map<std::string, std::multiset<FileInfo>> files;
 std::vector<std::string> copiesForDelete;
+std::vector<std::thread> threadsForDuplicates;
+
 
 std::string GetFileExtension(const std::string& file)
 {
@@ -87,6 +89,41 @@ void PrintFiles()
 	}
 	std::cout << std::boolalpha;
 	std::cout << CompareFile(filesElements[0], filesElements[1]);
+}
+
+
+void ThreadHelper(const std::string& extension, std::unordered_map<std::string, std::vector<std::string>>& copiesOfElems)
+{
+	const auto& elements = files[extension];
+	std::list<FileInfo> filesWithInfos;
+	std::ranges::for_each(elements, [&](const auto& elem) {filesWithInfos.push_back(elem); });
+	for (auto listIterator = filesWithInfos.begin(); listIterator != filesWithInfos.end(); listIterator++)
+	{
+		copiesOfElems[(*listIterator).filePath] = std::vector<std::string>();
+		for (auto innerIt = listIterator; innerIt != filesWithInfos.end();)
+		{
+			if (*listIterator == *innerIt)
+			{
+				innerIt++;
+				continue;
+			}
+
+			if ((*listIterator).fileSize != (*innerIt).fileSize)
+				break;
+
+			if (CompareFile((*listIterator).filePath, (*innerIt).filePath))
+			{
+				copiesOfElems[(*listIterator).filePath].push_back((*innerIt).filePath);
+				innerIt = filesWithInfos.erase(innerIt);
+			}
+			else
+			{
+				innerIt++;
+			}
+
+		}
+
+	}
 }
 
 using namespace std::filesystem;
@@ -155,40 +192,15 @@ export
 
 		std::unordered_map<std::string, std::vector<std::string>> copiesOfElems;
 
+		threadsForDuplicates.clear();
+		
 		for (const auto& elems : files)
 		{
-			auto extension = elems.first;
-			const auto& elements = elems.second;
-			std::list<FileInfo> filesWithInfos;
-			std::ranges::for_each(elements, [&](const auto& elem) {filesWithInfos.push_back(elem); });
-			for (auto listIterator = filesWithInfos.begin(); listIterator != filesWithInfos.end(); listIterator++)
-			{
-				copiesOfElems[(*listIterator).filePath] = std::vector<std::string>();
-				for (auto innerIt = listIterator; innerIt != filesWithInfos.end();)
-				{
-					if (*listIterator == *innerIt)
-					{
-						innerIt++;
-						continue;
-					}
-
-					if ((*listIterator).fileSize != (*innerIt).fileSize)
-						break;
-
-					if (CompareFile((*listIterator).filePath, (*innerIt).filePath))
-					{
-						copiesOfElems[(*listIterator).filePath].push_back((*innerIt).filePath);
-						innerIt = filesWithInfos.erase(innerIt);
-					}
-					else
-					{
-						innerIt++;
-					}
-
-				}
-
-			}
+			threadsForDuplicates.emplace_back(&ThreadHelper, elems.first, std::ref(copiesOfElems));
 		}
+
+		for (auto& thread : threadsForDuplicates)
+			thread.join();
 
 		std::ofstream out;
 		std::string outputSource = path;

@@ -43,7 +43,7 @@ std::vector<std::string> copiesForDelete;
 std::string GetFileExtension(const std::string& file)
 {
 	long long pos = file.find_last_of('.');
-	if (pos <= 0 || pos >= std::numeric_limits<size_t>::max())
+	if (pos <= 0 || pos >= std::numeric_limits<int>::max())
 		pos = 0;
 
 	return file.substr(pos, file.size() - pos);
@@ -229,6 +229,11 @@ export
 			if (!std::filesystem::is_directory(pathIt))
 			{
 				auto extensionInner = GetFileExtension(pathIt.path().string());
+				if (!extension.empty())
+				{
+					if (extensionInner != extension)
+						continue;
+				}
 				auto newName = path;
 				newName.append("\\");
 				newName.append(prefix);

@@ -1,8 +1,9 @@
 module;
+
 export module CopyFinderModule;
 
 import <iostream>;
-import <filesystem>;
+export import <filesystem>;
 import <vector>;
 import <concepts>;
 import <unordered_map>;
@@ -12,7 +13,9 @@ import <numeric>;
 import <fstream>;
 import <list>;
 
-export struct FileInfo
+
+
+struct FileInfo
 {
 	long long fileSize;
 	std::string filePath;
@@ -35,7 +38,7 @@ export struct FileInfo
 
 // extension key - FileInfo data
 std::unordered_map<std::string, std::multiset<FileInfo>> files;
-
+std::vector<std::string> copiesForDelete;
 
 std::string GetFileExtension(const std::string& file)
 {
@@ -45,6 +48,17 @@ std::string GetFileExtension(const std::string& file)
 
 	return file.substr(pos, file.size() - pos);
 }
+
+bool DeleteFile(const std::string& file)
+{
+	if (std::filesystem::exists(file))
+	{
+		remove(file.c_str());
+		return true;
+	}
+	return false;
+}
+
 
 
 bool CompareFile(const std::string& file1, const std::string& file2) 
@@ -128,16 +142,18 @@ export
 		}
 	}
 
-	void ListAllFiles(bool recursive = false, const std::string_view& path = ".")
+	void ListAllFiles(bool recursive = false, const std::string& path = ".")
 	{ 
 		if (files.empty())
 			LoadAllFiles(recursive, path);
 	}
 
-	void ListAllDuplicates(bool recursive = false, const std::string_view& path = ".")
+	void ListAllDuplicates(bool recursive = false, const std::string& path = ".")
 	{
 		if (files.empty())
 			LoadAllFiles(recursive, path);
+
+		std::unordered_map<std::string, std::vector<std::string>> copiesOfElems;
 
 		for (const auto& elems : files)
 		{
@@ -147,8 +163,7 @@ export
 			std::ranges::for_each(elements, [&](const auto& elem) {filesWithInfos.push_back(elem); });
 			for (auto listIterator = filesWithInfos.begin(); listIterator != filesWithInfos.end(); listIterator++)
 			{
-				std::cout << "Copies of file" << (*listIterator).filePath << std::endl;
-				std::vector<std::string> copies;
+				copiesOfElems[(*listIterator).filePath] = std::vector<std::string>();
 				for (auto innerIt = listIterator; innerIt != filesWithInfos.end();)
 				{
 					if (*listIterator == *innerIt)
@@ -162,7 +177,7 @@ export
 
 					if (CompareFile((*listIterator).filePath, (*innerIt).filePath))
 					{
-						copies.push_back((*innerIt).filePath);
+						copiesOfElems[(*listIterator).filePath].push_back((*innerIt).filePath);
 						innerIt = filesWithInfos.erase(innerIt);
 					}
 					else
@@ -172,14 +187,38 @@ export
 
 				}
 
-				for (auto it : copies)
-					std::cout << "\t" << it << std::endl;
-
 			}
 		}
 
+		std::ofstream out;
+		std::string outputSource = path;
+		outputSource.append("\\copies.txt");
+		out.open(outputSource.c_str());
+		for (const auto& file : copiesOfElems)
+		{
+			if (!file.second.empty())
+			{
+				out << "File: " << file.first << " has copies:" << std::endl;
+				unsigned long long copyNumber = 1;
+				for (const auto& copy : file.second)
+				{
+					copiesForDelete.push_back(copy);
+					out << "\t" << std::to_string(copyNumber++) << ": " << copy << std::endl;
+				}
+			}
+		}
+		out.close();
 
+	}
 
+	void DeleteAllCopies()
+	{
+		unsigned long deleted = 0;
+		for (const auto& path : copiesForDelete)
+			if (DeleteFile(path))
+				deleted++;
+
+		std::cout << "Number of files deleted: " << deleted << std::endl;
 	}
 
 }

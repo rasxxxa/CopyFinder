@@ -68,12 +68,14 @@ void StartProgram(char ** args)
 		{
 			std::string prefix;
 			std::string extension;
+			int nthToBeRemoved = -1;
 			bool ok = true;
 			do
 			{
 				std::cout << "Press 1. to change extension of files to be renamed" << std::endl;
 				std::cout << "Press 2. to enter new prefix name for files" << std::endl;
 				std::cout << "Press 3. to rename with current settings" << std::endl;
+				std::cout << "Press 4. to set n-th file to be renamed" << std::endl;
 				int input2;
 				std::cin >> input2;
 				switch (input2)
@@ -92,6 +94,11 @@ void StartProgram(char ** args)
 				{
 					ok = false;
 					RenameFiles(currentPath, prefix, extension);
+				}break;
+				case 4:
+				{
+					std::cout << "Input which nth file will be removed" << std::endl;
+					std::cin >> nthToBeRemoved;
 				}break;
 				}
 			} while (ok);

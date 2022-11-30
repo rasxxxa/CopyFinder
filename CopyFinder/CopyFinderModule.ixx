@@ -233,9 +233,10 @@ export
 		std::cout << "Number of files deleted: " << deleted << std::endl;
 	}
 
-	void RenameFiles(const std::string& path, const std::string& prefix, const std::string& extension = "")
+	void RenameFiles(const std::string& path, const std::string& prefix, const std::string& extension = "", const int nthToBeRemoved = -1)
 	{
 		unsigned long fileNumber = 1;
+		unsigned long fileCounter = 1;
 		for (const auto& pathIt : directory_iterator(path))
 		{
 			if (!std::filesystem::is_directory(pathIt))
@@ -246,6 +247,13 @@ export
 					if (extensionInner != extension)
 						continue;
 				}
+				fileCounter++;
+				if (nthToBeRemoved > 0 && fileCounter % nthToBeRemoved == 0)
+				{
+					remove(pathIt.path().c_str());
+					continue;
+				}
+
 				auto newName = path;
 				newName.append("\\");
 				newName.append(prefix);
@@ -254,6 +262,7 @@ export
 				rename(pathIt.path().c_str(), newName.c_str());
 			}
 		}
+
 	}
 
 }

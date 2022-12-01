@@ -6,14 +6,13 @@ export import <iostream>;
 export import <filesystem>;
 import <vector>;
 import <concepts>;
-import <unordered_map>;
-import <set>;
+export import <unordered_map>;
+export import <set>;
 import <algorithm>;
 import <numeric>;
 import <fstream>;
 import <list>;
 import <thread>;
-
 
 struct FileInfo
 {
@@ -92,14 +91,15 @@ void PrintFiles()
 }
 
 
-void ThreadHelper(const std::string& extension, std::unordered_map<std::string, std::vector<std::string>>& copiesOfElems)
+void ThreadHelper(const std::string& extension, std::unordered_map<std::string, std::unordered_map<std::string, std::vector<std::string>>>& copiesOfElems)
 {
 	const auto& elements = files[extension];
 	std::list<FileInfo> filesWithInfos;
 	std::ranges::for_each(elements, [&](const auto& elem) {filesWithInfos.push_back(elem); });
+	copiesOfElems[extension] = std::unordered_map<std::string, std::vector<std::string>>();
 	for (auto listIterator = filesWithInfos.begin(); listIterator != filesWithInfos.end(); listIterator++)
 	{
-		copiesOfElems[(*listIterator).filePath] = std::vector<std::string>();
+		copiesOfElems[extension][(*listIterator).filePath] = std::vector<std::string>();
 		for (auto innerIt = listIterator; innerIt != filesWithInfos.end();)
 		{
 			if (*listIterator == *innerIt)
@@ -113,7 +113,7 @@ void ThreadHelper(const std::string& extension, std::unordered_map<std::string, 
 
 			if (CompareFile((*listIterator).filePath, (*innerIt).filePath))
 			{
-				copiesOfElems[(*listIterator).filePath].push_back((*innerIt).filePath);
+				copiesOfElems[extension][(*listIterator).filePath].push_back((*innerIt).filePath);
 				innerIt = filesWithInfos.erase(innerIt);
 			}
 			else
@@ -160,8 +160,7 @@ export
 {
 	void LoadAllFiles(bool recursive, const std::string_view& path = ".")
 	{
-		if (!files.empty())
-			return;
+		files.clear();
 
 		if (recursive)
 		{
@@ -185,14 +184,20 @@ export
 			LoadAllFiles(recursive, path);
 	}
 
-	void ListAllDuplicates(bool recursive = false, const std::string& path = ".")
+	void ListAllDuplicates(const std::unordered_map<std::string, bool>& extensions, bool recursive = false, const std::string& path = ".")
 	{
-		if (files.empty())
-			LoadAllFiles(recursive, path);
-
-		std::unordered_map<std::string, std::vector<std::string>> copiesOfElems;
-
 		threadsForDuplicates.clear();
+		copiesForDelete.clear();
+		LoadAllFiles(recursive, path);
+
+		// too complex
+		std::unordered_map<std::string, std::unordered_map<std::string, std::vector<std::string>>> copiesOfElems;
+
+		std::erase_if(files, [extensions](const auto& fileValue) 
+			{
+				return extensions.count(fileValue.first) == 0;
+			});
+
 		
 		for (const auto& elems : files)
 		{
@@ -202,24 +207,34 @@ export
 		for (auto& thread : threadsForDuplicates)
 			thread.join();
 
-		std::ofstream out;
-		std::string outputSource = path;
-		outputSource.append("\\copies.txt");
-		out.open(outputSource.c_str());
 		for (const auto& file : copiesOfElems)
 		{
-			if (!file.second.empty())
+			std::ofstream out;
+			std::string outputSource = path;
+			outputSource.append("\\");
+			outputSource.append(file.first);
+			outputSource.append("_copies.txt");
+			out.open(outputSource.c_str());
+
+			auto mapOfFilesOfExtension = file.second;
+
+			for (const auto& copies : mapOfFilesOfExtension)
 			{
-				out << "File: " << file.first << " has copies:" << std::endl;
-				unsigned long long copyNumber = 1;
-				for (const auto& copy : file.second)
+				if (!copies.second.empty())
 				{
-					copiesForDelete.push_back(copy);
-					out << "\t" << std::to_string(copyNumber++) << ": " << copy << std::endl;
+					out << "File: " << copies.first << " has copies:" << std::endl;
+					unsigned long long copyNumber = 1;
+					for (const auto& copy : copies.second)
+					{
+						copiesForDelete.push_back(copy);
+						out << "\t" << std::to_string(copyNumber++) << ": " << copy << std::endl;
+					}
 				}
 			}
+
+
+			out.close();
 		}
-		out.close();
 
 	}
 

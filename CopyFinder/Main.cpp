@@ -20,7 +20,8 @@ void StartProgram(char ** args)
 
 		switch (in)
 		{
-		case 1: {
+		case 1: 
+		{
 
 			bool ok = true;
 			do
@@ -44,7 +45,7 @@ void StartProgram(char ** args)
 		case 2:
 		{
 			ListAllDuplicates(false, currentPath);
-		}
+		} break;
 		case 3:
 		{
 			ListAllDuplicates(true, currentPath);

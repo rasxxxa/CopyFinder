@@ -280,4 +280,10 @@ export
 
 	}
 
+	void SearchFiles(const std::string& prefix, const std::string& infix, const std::string& sufix)
+	{
+
+	}
+
+
 }

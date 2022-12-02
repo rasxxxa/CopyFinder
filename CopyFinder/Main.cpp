@@ -8,12 +8,11 @@ void StartProgram(char ** args)
 	std::unordered_map<std::string, bool> extensions;
 	while (true)
 	{
-		system("cls");
 		std::cout << "Current path is: " << std::endl << currentPath << std::endl;
 		std::cout << "Press 1. to change current path" << std::endl;
 		std::cout << "Press 2. to list duplicates" << std::endl;
 		std::cout << "Press 3. To rename all files in folder" << std::endl;
-
+		std::cout << "Press 4. to search for file" << std::endl;
 
 		int in;
 		std::cin >> in;
@@ -153,6 +152,57 @@ void StartProgram(char ** args)
 				}break;
 				}
 			} while (ok);
+		}break;
+		case 4:
+		{
+			bool ok = true;
+			std::string prefix, sufix, infix;
+			do
+			{
+				std::cout << "Press 1: to input prefix" << std::endl;
+				std::cout << "Press 2: to input sufix" << std::endl;
+				std::cout << "Press 3: to input infix" << std::endl;
+				std::cout << "Press 4: to search" << std::endl;
+
+
+				if (!prefix.empty() || !infix.empty() || !infix.empty())
+				{
+					std::cout << "Files to be searched are like " << prefix << "__" << infix << "__" << sufix << std::endl;
+				}
+				int in;
+				std::cin >> in;
+				switch (in)
+				{
+				case 1: {
+				
+					std::cout << "Type new prefix" << std::endl;
+					std::cin >> prefix;
+				
+				} break;
+				case 2: {
+				
+
+					std::cout << "Type new sufix" << std::endl;
+					std::cin >> infix;
+				
+				} break;
+				case 3: {
+				
+
+					std::cout << "Type new infix" << std::endl;
+					std::cin >> sufix;
+				
+				} break;
+				case 4:
+				{
+					SearchFiles(prefix, sufix, infix);
+					ok = false;
+				}
+				default:
+					break;
+				}
+			} while (ok);
+
 		}break;
 
 

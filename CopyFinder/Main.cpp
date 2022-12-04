@@ -183,19 +183,19 @@ void StartProgram(char ** args)
 				
 
 					std::cout << "Type new sufix" << std::endl;
-					std::cin >> infix;
+					std::cin >> sufix;
 				
 				} break;
 				case 3: {
 				
 
 					std::cout << "Type new infix" << std::endl;
-					std::cin >> sufix;
+					std::cin >> infix;
 				
 				} break;
 				case 4:
 				{
-					SearchFiles(prefix, sufix, infix);
+					SearchFiles(currentPath, prefix, sufix, infix);
 					ok = false;
 				}
 				default:
@@ -211,6 +211,7 @@ void StartProgram(char ** args)
 		}
 	}
 }
+
 auto main(int nargs, char**args) -> int
 {
 	StartProgram(args);

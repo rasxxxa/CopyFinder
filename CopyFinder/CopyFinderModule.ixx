@@ -280,9 +280,45 @@ export
 
 	}
 
-	void SearchFiles(const std::string& prefix, const std::string& infix, const std::string& sufix)
+	void SearchFiles(const std::string& path, const std::string& prefix, const std::string& sufix, const std::string& infix)
 	{
+		for (auto it : recursive_directory_iterator(path))
+		{
+			auto fileName = it.path().filename().string();
+			std::ranges::transform(fileName, fileName.begin(), [](const auto& a) {return tolower(a); });
+			bool ok = true;
+			if (!prefix.empty())
+			{
+				std::string lowerPrefix;
+				lowerPrefix.resize(prefix.size());
+				std::ranges::transform(prefix, lowerPrefix.begin(), [](const auto& a) {return tolower(a); });
+				ok &= fileName.find(lowerPrefix) == 0;
+				if (!ok)
+					continue;
+			}
+			if (!infix.empty())
+			{
+				std::string lowerInfix;
+				lowerInfix.resize(infix.size());
+				std::ranges::transform(infix, lowerInfix.begin(), [](const auto& a) {return tolower(a); });
+				ok &= fileName.find(lowerInfix) != std::string::npos;
+				if (!ok)
+					continue;
+			}
+			if (!sufix.empty())
+			{
+				std::string lowerSufix;
+				lowerSufix.resize(sufix.size());
+				std::ranges::transform(sufix, lowerSufix.begin(), [](const auto& a) {return tolower(a); });
+				auto pos = fileName.find(lowerSufix);
+				ok &= (pos != std::string::npos && pos == (fileName.size() - lowerSufix.size()));
+				if (!ok)
+					continue;
+			}
 
+			if (ok)
+				std::cout << "Found file on path: " << it.path().string() << std::endl;
+		}
 	}
 
 
